@@ -21,6 +21,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public User register(@RequestBody User user) {
+        System.out.println("REGISTER HIT!");
         user.setPassword(encoder.encode(user.getPassword()));
         return repo.save(user);
     }
