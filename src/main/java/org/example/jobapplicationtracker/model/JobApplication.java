@@ -27,4 +27,6 @@ public class JobApplication {
     private LocalDate deadline;
 
     private String notes;
+    @ManyToOne
+    private User user;
 }

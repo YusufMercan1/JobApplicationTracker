@@ -3,7 +3,10 @@ package org.example.jobapplicationtracker.service;
 import org.example.jobapplicationtracker.model.Status;
 import org.example.jobapplicationtracker.model.JobApplication;
 import org.example.jobapplicationtracker.repository.JobApplicationRepository;
+import org.example.jobapplicationtracker.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.example.jobapplicationtracker.model.User;
 
 import java.util.List;
 
@@ -11,12 +14,27 @@ import java.util.List;
 public class JobApplicationService {
 
     private final JobApplicationRepository repository;
+    private final UserRepository userRepository;
 
-    public JobApplicationService(JobApplicationRepository repository) {
+    public JobApplicationService(JobApplicationRepository repository,
+                                 UserRepository userRepository) {
         this.repository = repository;
+        this.userRepository = userRepository;
     }
 
     public JobApplication create(JobApplication job) {
+
+        String username = SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getName();
+
+        System.out.println("JWT USER: " + username);
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        job.setUser(user);
+
         return repository.save(job);
     }
 
