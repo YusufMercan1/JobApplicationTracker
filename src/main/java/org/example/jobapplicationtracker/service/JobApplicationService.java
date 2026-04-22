@@ -49,4 +49,15 @@ public class JobApplicationService {
         return repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Not found"));
     }
+    public List<JobApplication> getOverdueApplications() {
+        return repository.findAll().stream()
+                .filter(app -> app.getDeadline() != null)
+                .filter(app -> app.getDeadline().isBefore(java.time.LocalDate.now()))
+                .toList();
+    }
+    public List<JobApplication> getActiveApplications() {
+        return repository.findAll().stream()
+                .filter(app -> app.getStatus() != Status.REJECTED)
+                .toList();
+    }
 }

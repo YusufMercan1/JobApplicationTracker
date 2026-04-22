@@ -45,4 +45,12 @@ public class JobApplicationController {
     public JobApplication getById(@PathVariable Long id) {
         return service.getById(id);
     }
+    @GetMapping("/stats/overdue")
+    public List<JobApplication> getOverdue() {
+        return service.getOverdueApplications();
+    }
+    @GetMapping("/stats/active")
+    public List<JobApplication> getActive() {
+        return service.getActiveApplications();
+    }
 }
