@@ -17,8 +17,13 @@ public class EmailService {
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(to);
-        message.setSubject("⏰ Job Reminder");
-        message.setText("Reminder: " + company + " deadline är " + deadline);
+        message.setSubject("⏰ Job application reminder");
+        message.setText(
+                "Reminder!\n\n" +
+                        "Company: " + company + "\n" +
+                        "Deadline: " + deadline + "\n\n" +
+                        "Good luck!"
+        );
 
         mailSender.send(message);
     }

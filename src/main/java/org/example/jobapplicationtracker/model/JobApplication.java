@@ -29,4 +29,5 @@ public class JobApplication {
     private String notes;
     @ManyToOne
     private User user;
+    private boolean reminderSent = false;
 }

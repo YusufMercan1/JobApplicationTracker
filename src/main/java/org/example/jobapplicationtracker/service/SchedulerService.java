@@ -15,12 +15,14 @@ public class SchedulerService {
     private final JobApplicationRepository repository;
     private final EmailService emailService;
 
-    public SchedulerService(JobApplicationRepository repository, EmailService emailService) {
+
+    public SchedulerService(JobApplicationRepository repository,
+                            EmailService emailService) {
         this.repository = repository;
         this.emailService = emailService;
     }
 
-    @Scheduled(fixedRate = 30000) // var 30 sek för test
+    @Scheduled(fixedRate = 30000) // test: var 30:e sekund
     public void checkDeadlines() {
 
         LocalDate today = LocalDate.now();
@@ -33,16 +35,25 @@ public class SchedulerService {
 
         for (JobApplication app : upcoming) {
 
-            User user = app.getUser();
-
-            if (user != null && user.getEmail() != null) {
-
-                emailService.sendReminder(
-                        user.getEmail(),
-                        app.getCompanyName(),
-                        app.getDeadline().toString()
-                );
+            if (app.getUser() == null || app.getUser().getEmail() == null) {
+                System.out.println("SKIP (no user/email) id=" + app.getId());
+                continue;
             }
+
+            if (app.isReminderSent()) {
+                continue;
+            }
+
+            emailService.sendReminder(
+                    app.getUser().getEmail(),
+                    app.getCompanyName(),
+                    app.getDeadline().toString()
+            );
+
+            app.setReminderSent(true);
+            repository.save(app);
+
+            System.out.println("📧 SENT ONCE to: " + app.getUser().getEmail());
         }
     }
 }
