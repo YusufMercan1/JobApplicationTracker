@@ -16,6 +16,7 @@ public class SchedulerService {
     private final EmailService emailService;
 
 
+
     public SchedulerService(JobApplicationRepository repository,
                             EmailService emailService) {
         this.repository = repository;
@@ -31,6 +32,7 @@ public class SchedulerService {
         List<JobApplication> upcoming = repository.findAll().stream()
                 .filter(app -> app.getDeadline() != null)
                 .filter(app -> !app.getDeadline().isAfter(in3Days))
+                .filter(app -> app.getUser() != null)
                 .toList();
 
         for (JobApplication app : upcoming) {
