@@ -5,6 +5,7 @@ import org.example.jobapplicationtracker.repository.UserRepository;
 import org.example.jobapplicationtracker.security.JwtService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @RestController
 @RequestMapping("/auth")
@@ -21,7 +22,6 @@ public class AuthController {
 
     @PostMapping("/register")
     public User register(@RequestBody User user) {
-        System.out.println("REGISTER HIT!");
         user.setPassword(encoder.encode(user.getPassword()));
         return repo.save(user);
     }
