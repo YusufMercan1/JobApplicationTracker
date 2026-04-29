@@ -19,7 +19,6 @@ public class JobApplicationService {
     public JobApplication create(JobApplication job) {
         return repository.save(job);
     }
-
     public List<JobApplication> getAll() {
         return repository.findAll();
     }

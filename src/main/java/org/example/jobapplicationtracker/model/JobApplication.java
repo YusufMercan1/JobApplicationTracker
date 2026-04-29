@@ -4,6 +4,7 @@ import org.example.jobapplicationtracker.model.Status;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Getter
@@ -27,4 +28,11 @@ public class JobApplication {
     private LocalDate deadline;
 
     private String notes;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @OneToMany(mappedBy = "jobApplication", cascade = CascadeType.ALL)
+    private List<Interview> interviews;
 }

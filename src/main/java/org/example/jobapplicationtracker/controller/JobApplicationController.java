@@ -2,8 +2,10 @@ package org.example.jobapplicationtracker.controller;
 
 import org.example.jobapplicationtracker.model.Status;
 import org.example.jobapplicationtracker.model.JobApplication;
+import org.example.jobapplicationtracker.model.User;
 import org.example.jobapplicationtracker.service.JobApplicationService;
 import org.springframework.web.bind.annotation.*;
+import org.example.jobapplicationtracker.repository.UserRepository;
 
 import java.util.List;
 
@@ -12,13 +14,23 @@ import java.util.List;
 public class JobApplicationController {
 
     private final JobApplicationService service;
+    private final UserRepository userRepository;
 
-    public JobApplicationController(JobApplicationService service) {
+    public JobApplicationController(JobApplicationService service, UserRepository userRepository) {
         this.service = service;
+        this.userRepository = userRepository;
     }
 
     @PostMapping
     public JobApplication create(@RequestBody JobApplication job) {
+        String username = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication().getName();
+
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Användare hittades inte"));
+
+        job.setUser(currentUser);
+
         return service.create(job);
     }
 
