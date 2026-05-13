@@ -1,8 +1,8 @@
 package org.example.jobapplicationtracker.model;
 
-import org.example.jobapplicationtracker.model.Status;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDate;
 
 @Entity
@@ -27,4 +27,10 @@ public class JobApplication {
     private LocalDate deadline;
 
     private String notes;
+
+    @ManyToOne
+    private User user;
+
+    @Column(nullable = false)
+    private boolean reminderSent = false;
 }
