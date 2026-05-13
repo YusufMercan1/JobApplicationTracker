@@ -1,5 +1,6 @@
 package org.example.jobapplicationtracker.controller;
 
+import org.example.jobapplicationtracker.dto.DashboardResponse;
 import org.example.jobapplicationtracker.model.Status;
 import org.example.jobapplicationtracker.model.JobApplication;
 import org.example.jobapplicationtracker.service.JobApplicationService;
@@ -37,23 +38,33 @@ public class JobApplicationController {
     @PutMapping("/{id}")
     public JobApplication update(@PathVariable Long id, @RequestBody JobApplication job) {
         return service.update(id, job);
+
     }
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         service.delete(id);
     }
+
     @GetMapping("/{id}")
     public JobApplication getById(@PathVariable Long id) {
         return service.getById(id);
     }
+
     @GetMapping("/stats/overdue")
     public List<JobApplication> getOverdue() {
         return service.getOverdueApplications();
 
     }
+
     @GetMapping("/stats/active")
     public List<JobApplication> getActive() {
         return service.getActiveApplications();
     }
+
+    @GetMapping("/dashboard")
+    public DashboardResponse getDashboard() {
+        return service.getDashboard();
+    }
 }
+

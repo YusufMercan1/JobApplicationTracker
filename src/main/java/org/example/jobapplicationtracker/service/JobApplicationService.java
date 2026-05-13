@@ -1,7 +1,9 @@
 package org.example.jobapplicationtracker.service;
 
+import org.example.jobapplicationtracker.dto.DashboardResponse;
 import org.example.jobapplicationtracker.model.Status;
 import org.example.jobapplicationtracker.model.JobApplication;
+import org.example.jobapplicationtracker.model.User;
 import org.example.jobapplicationtracker.repository.JobApplicationRepository;
 import org.example.jobapplicationtracker.repository.UserRepository;
 import org.springframework.stereotype.Service;
