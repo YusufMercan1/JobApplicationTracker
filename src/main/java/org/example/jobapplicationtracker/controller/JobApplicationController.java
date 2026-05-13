@@ -23,10 +23,12 @@ public class JobApplicationController {
         return service.create(job);
     }
 
+
     @GetMapping
     public List<JobApplication> getAll() {
         return service.getAll();
     }
+
 
     @GetMapping("/status/{status}")
     public List<JobApplication> getByStatus(@PathVariable Status status) {
@@ -52,6 +54,7 @@ public class JobApplicationController {
     @GetMapping("/stats/overdue")
     public List<JobApplication> getOverdue() {
         return service.getOverdueApplications();
+
     }
 
     @GetMapping("/stats/active")

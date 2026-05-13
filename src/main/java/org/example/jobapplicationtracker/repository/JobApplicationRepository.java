@@ -10,6 +10,6 @@ import java.util.List;
 public interface JobApplicationRepository extends JpaRepository<JobApplication, Long> {
 
     List<JobApplication> findByStatus(Status status);
-
     List<JobApplication> findByUser(User user);
+
 }
