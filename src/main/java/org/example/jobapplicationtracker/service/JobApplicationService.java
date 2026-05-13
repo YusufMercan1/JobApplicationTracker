@@ -6,9 +6,8 @@ import org.example.jobapplicationtracker.model.JobApplication;
 import org.example.jobapplicationtracker.model.User;
 import org.example.jobapplicationtracker.repository.JobApplicationRepository;
 import org.example.jobapplicationtracker.repository.UserRepository;
-import org.springframework.stereotype.Service;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.example.jobapplicationtracker.model.User;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -42,7 +41,8 @@ public class JobApplicationService {
     }
 
     public List<JobApplication> getAll() {
-        return repository.findByUser(getCurrentUser());    }
+        return repository.findByUser(getCurrentUser());
+    }
 
     public List<JobApplication> getByStatus(Status status) {
         return repository.findByUser(getCurrentUser()).stream()
@@ -54,7 +54,6 @@ public class JobApplicationService {
 
         JobApplication job = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Not found"));
-
 
         if (!job.getUser().getUsername().equals(getCurrentUser().getUsername())) {
             throw new RuntimeException("Unauthorized");
@@ -99,6 +98,46 @@ public class JobApplicationService {
                 .filter(app -> app.getStatus() == Status.APPLIED)
                 .toList();
     }
+
+    public DashboardResponse getDashboard() {
+
+        User user = getCurrentUser();
+
+        List<JobApplication> applications = repository.findByUser(user);
+
+        long total = applications.size();
+
+        long applied = applications.stream()
+                .filter(app -> app.getStatus() == Status.APPLIED)
+                .count();
+
+        long interview = applications.stream()
+                .filter(app -> app.getStatus() == Status.INTERVIEW)
+                .count();
+
+        long offer = applications.stream()
+                .filter(app -> app.getStatus() == Status.OFFER)
+                .count();
+
+        long rejected = applications.stream()
+                .filter(app -> app.getStatus() == Status.REJECTED)
+                .count();
+
+        long overdue = applications.stream()
+                .filter(app -> app.getDeadline() != null)
+                .filter(app -> app.getDeadline().isBefore(LocalDate.now()))
+                .count();
+
+        return new DashboardResponse(
+                total,
+                applied,
+                interview,
+                offer,
+                rejected,
+                overdue
+        );
+    }
+
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext()
                 .getAuthentication()
