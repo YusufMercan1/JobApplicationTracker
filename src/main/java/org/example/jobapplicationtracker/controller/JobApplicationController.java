@@ -5,6 +5,7 @@ import org.example.jobapplicationtracker.model.Status;
 import org.example.jobapplicationtracker.model.JobApplication;
 import org.example.jobapplicationtracker.service.JobApplicationService;
 import org.springframework.web.bind.annotation.*;
+import org.example.jobapplicationtracker.dto.JobApplicationResponse;
 
 import java.util.List;
 
@@ -25,7 +26,7 @@ public class JobApplicationController {
 
 
     @GetMapping
-    public List<JobApplication> getAll() {
+    public List<JobApplicationResponse> getAll() {
         return service.getAll();
     }
 

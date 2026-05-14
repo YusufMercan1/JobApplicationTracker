@@ -6,6 +6,9 @@ import org.example.jobapplicationtracker.security.JwtService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.example.jobapplicationtracker.dto.AuthResponse;
+import org.example.jobapplicationtracker.dto.LoginRequest;
+import org.example.jobapplicationtracker.dto.RegisterRequest;
 
 @RestController
 @RequestMapping("/auth")
@@ -21,18 +24,27 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public User register(@RequestBody User user) {
-        user.setPassword(encoder.encode(user.getPassword()));
+    public User register(@RequestBody RegisterRequest request) {
+
+        User user = new User();
+        user.setUsername(request.username());
+        user.setEmail(request.email());
+        user.setPassword(encoder.encode(request.password()));
+
         return repo.save(user);
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody User user) {
-        User dbUser = repo.findByUsername(user.getUsername())
+    public AuthResponse login(@RequestBody LoginRequest request) {
+
+        User dbUser = repo.findByUsername(request.username())
                 .orElseThrow();
 
-        if (encoder.matches(user.getPassword(), dbUser.getPassword())) {
-            return jwtService.generateToken(user.getUsername());
+        if (encoder.matches(request.password(), dbUser.getPassword())) {
+
+            String token = jwtService.generateToken(request.username());
+
+            return new AuthResponse(token);
         }
 
         throw new RuntimeException("Invalid login");

@@ -8,6 +8,7 @@ import org.example.jobapplicationtracker.repository.JobApplicationRepository;
 import org.example.jobapplicationtracker.repository.UserRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.example.jobapplicationtracker.dto.JobApplicationResponse;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -40,8 +41,19 @@ public class JobApplicationService {
         return repository.save(job);
     }
 
-    public List<JobApplication> getAll() {
-        return repository.findByUser(getCurrentUser());
+    public List<JobApplicationResponse> getAll() {
+        return repository.findByUser(getCurrentUser())
+                .stream()
+                .map(job -> new JobApplicationResponse(
+                        job.getId(),
+                        job.getCompanyName(),
+                        job.getRole(),
+                        job.getStatus(),
+                        job.getAppliedDate(),
+                        job.getDeadline(),
+                        job.getNotes()
+                ))
+                .toList();
     }
 
     public List<JobApplication> getByStatus(Status status) {
