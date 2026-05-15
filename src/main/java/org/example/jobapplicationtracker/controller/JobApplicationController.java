@@ -3,7 +3,9 @@ package org.example.jobapplicationtracker.controller;
 import org.example.jobapplicationtracker.model.Status;
 import org.example.jobapplicationtracker.model.JobApplication;
 import org.example.jobapplicationtracker.model.User;
+import org.example.jobapplicationtracker.repository.JobApplicationRepository;
 import org.example.jobapplicationtracker.service.JobApplicationService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.example.jobapplicationtracker.repository.UserRepository;
 
@@ -14,29 +16,25 @@ import java.util.List;
 public class JobApplicationController {
 
     private final JobApplicationService service;
-    private final UserRepository userRepository;
 
-    public JobApplicationController(JobApplicationService service, UserRepository userRepository) {
+    // Vi behöver bara service här nu!
+    public JobApplicationController(JobApplicationService service) {
         this.service = service;
-        this.userRepository = userRepository;
     }
 
     @PostMapping
-    public JobApplication create(@RequestBody JobApplication job) {
-        String username = org.springframework.security.core.context.SecurityContextHolder
-                .getContext().getAuthentication().getName();
-
-        User currentUser = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Användare hittades inte"));
-
-        job.setUser(currentUser);
-
-        return service.create(job);
+    public ResponseEntity<JobApplication> create(@RequestBody JobApplication application) {
+        return ResponseEntity.ok(service.create(application));
     }
 
     @GetMapping
     public List<JobApplication> getAll() {
-        return service.getAll();
+        return service.getAllForCurrentUser();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<JobApplication> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(service.getById(id));
     }
 
     @GetMapping("/status/{status}")
@@ -45,16 +43,13 @@ public class JobApplicationController {
     }
 
     @PutMapping("/{id}")
-    public JobApplication update(@PathVariable Long id, @RequestBody JobApplication job) {
-        return service.update(id, job);
+    public ResponseEntity<JobApplication> update(@PathVariable Long id, @RequestBody JobApplication job) {
+        return ResponseEntity.ok(service.update(id, job));
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
-    }
-    @GetMapping("/{id}")
-    public JobApplication getById(@PathVariable Long id) {
-        return service.getById(id);
+        return ResponseEntity.noContent().build();
     }
 }

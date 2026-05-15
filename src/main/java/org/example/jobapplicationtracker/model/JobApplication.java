@@ -1,5 +1,6 @@
 package org.example.jobapplicationtracker.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.example.jobapplicationtracker.model.Status;
 import jakarta.persistence.*;
 import lombok.*;
@@ -31,6 +32,7 @@ public class JobApplication {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
+    @JsonIgnore
     private User user;
 
     @OneToMany(mappedBy = "jobApplication", cascade = CascadeType.ALL)

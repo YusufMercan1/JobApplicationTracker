@@ -1,40 +1,38 @@
 package org.example.jobapplicationtracker.controller;
 
 import org.example.jobapplicationtracker.model.User;
-import org.example.jobapplicationtracker.repository.UserRepository;
 import org.example.jobapplicationtracker.security.JwtService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.example.jobapplicationtracker.service.UserService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
 
-    private final UserRepository repo;
+    private final UserService userService;
     private final JwtService jwtService;
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
-    public AuthController(UserRepository repo, JwtService jwtService) {
-        this.repo = repo;
+    public AuthController(UserService userService, JwtService jwtService) {
+        this.userService = userService;
         this.jwtService = jwtService;
     }
 
     @PostMapping("/register")
-    public User register(@RequestBody User user) {
-        System.out.println("REGISTER HIT!");
-        user.setPassword(encoder.encode(user.getPassword()));
-        return repo.save(user);
+    public ResponseEntity<User> register(@RequestBody User user) {
+        return ResponseEntity.ok(userService.registerUser(user));
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody User user) {
-        User dbUser = repo.findByUsername(user.getUsername())
-                .orElseThrow();
+    public ResponseEntity<?> login(@RequestBody User user) {
+        System.out.println("Loginförsök: " + user.getUsername());
 
-        if (encoder.matches(user.getPassword(), dbUser.getPassword())) {
-            return jwtService.generateToken(user.getUsername());
-        }
-
-        throw new RuntimeException("Invalid login");
+        return userService.verifyUser(user.getUsername(), user.getPassword())
+                .map(dbUser -> {
+                    String token = jwtService.generateToken(dbUser.getUsername());
+                    return ResponseEntity.ok(token);
+                })
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Fel användarnamn eller lösenord"));
     }
 }

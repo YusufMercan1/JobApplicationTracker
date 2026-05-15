@@ -1,0 +1,61 @@
+.dashboard-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-add {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  &:hover { background-color: #218838; }
+}
+
+.btn-delete {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  &:hover { background-color: #c82333; }
+}
+
+.job-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+
+  th, td {
+    text-align: left;
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+  }
+}
+
+.status-select {
+  padding: 5px;
+  border-radius: 4px;
+  font-weight: bold;
+  border: 1px solid #ccc;
+
+  &.sökt { color: #007bff; }
+  &.intervju { color: #ffc107; }
+  &.erbjudande { color: #28a745; }
+  &.nej { color: #6c757d; }
+}
