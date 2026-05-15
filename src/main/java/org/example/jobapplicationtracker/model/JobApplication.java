@@ -1,7 +1,6 @@
 package org.example.jobapplicationtracker.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.example.jobapplicationtracker.model.Status;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
@@ -29,6 +28,8 @@ public class JobApplication {
     private LocalDate deadline;
 
     private String notes;
+
+    private boolean reminderSent = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")

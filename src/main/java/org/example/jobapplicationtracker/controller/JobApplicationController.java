@@ -1,23 +1,21 @@
 package org.example.jobapplicationtracker.controller;
 
+import org.example.jobapplicationtracker.dto.DashboardResponse;
 import org.example.jobapplicationtracker.model.Status;
 import org.example.jobapplicationtracker.model.JobApplication;
-import org.example.jobapplicationtracker.model.User;
-import org.example.jobapplicationtracker.repository.JobApplicationRepository;
 import org.example.jobapplicationtracker.service.JobApplicationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.example.jobapplicationtracker.repository.UserRepository;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/applications")
+@CrossOrigin(origins = "http://localhost:4200")
 public class JobApplicationController {
 
     private final JobApplicationService service;
 
-    // Vi behöver bara service här nu!
     public JobApplicationController(JobApplicationService service) {
         this.service = service;
     }
@@ -28,8 +26,8 @@ public class JobApplicationController {
     }
 
     @GetMapping
-    public List<JobApplication> getAll() {
-        return service.getAllForCurrentUser();
+    public ResponseEntity<List<JobApplication>> getAll() {
+        return ResponseEntity.ok(service.getAllForCurrentUser());
     }
 
     @GetMapping("/{id}")
@@ -38,8 +36,8 @@ public class JobApplicationController {
     }
 
     @GetMapping("/status/{status}")
-    public List<JobApplication> getByStatus(@PathVariable Status status) {
-        return service.getByStatus(status);
+    public ResponseEntity<List<JobApplication>> getByStatus(@PathVariable Status status) {
+        return ResponseEntity.ok(service.getByStatus(status));
     }
 
     @PutMapping("/{id}")
@@ -51,5 +49,20 @@ public class JobApplicationController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/stats/overdue")
+    public ResponseEntity<List<JobApplication>> getOverdue() {
+        return ResponseEntity.ok(service.getOverdueApplications());
+    }
+
+    @GetMapping("/stats/active")
+    public ResponseEntity<List<JobApplication>> getActive() {
+        return ResponseEntity.ok(service.getActiveApplications());
+    }
+
+    @GetMapping("/dashboard")
+    public ResponseEntity<DashboardResponse> getDashboard() {
+        return ResponseEntity.ok(service.getDashboard());
     }
 }
