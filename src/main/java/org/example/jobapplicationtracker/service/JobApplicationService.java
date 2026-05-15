@@ -1,7 +1,9 @@
 package org.example.jobapplicationtracker.service;
 
+import org.example.jobapplicationtracker.dto.CreateJobApplicationRequest;
 import org.example.jobapplicationtracker.dto.DashboardResponse;
 import org.example.jobapplicationtracker.dto.JobApplicationResponse;
+import org.example.jobapplicationtracker.dto.UpdateJobApplicationRequest;
 import org.example.jobapplicationtracker.exception.JobApplicationNotFoundException;
 import org.example.jobapplicationtracker.exception.UnauthorizedAccessException;
 import org.example.jobapplicationtracker.exception.UserNotFoundException;
@@ -33,17 +35,27 @@ public class JobApplicationService {
         this.userRepository = userRepository;
     }
 
-    public JobApplication create(JobApplication job) {
+
+    public JobApplicationResponse create(CreateJobApplicationRequest req) {
 
         User currentUser = getCurrentUser();
 
-        logger.info("Creating job application for user: {}",
-                currentUser.getUsername());
-
+        JobApplication job = new JobApplication();
+        job.setCompanyName(req.companyName());
+        job.setRole(req.role());
+        job.setAppliedDate(req.appliedDate());
+        job.setDeadline(req.deadline());
+        job.setNotes(req.notes());
+        job.setStatus(Status.APPLIED);
         job.setUser(currentUser);
 
-        return repository.save(job);
+        JobApplication saved = repository.save(job);
+
+        logger.info("Created job application for user {}", currentUser.getUsername());
+
+        return mapToResponse(saved);
     }
+
 
     public List<JobApplicationResponse> getAll() {
 
@@ -51,69 +63,44 @@ public class JobApplicationService {
 
         return repository.findByUser(currentUser)
                 .stream()
-                .map(job -> new JobApplicationResponse(
-                        job.getId(),
-                        job.getCompanyName(),
-                        job.getRole(),
-                        job.getStatus(),
-                        job.getAppliedDate(),
-                        job.getDeadline(),
-                        job.getNotes()
-                ))
+                .map(this::mapToResponse)
                 .toList();
     }
 
-    public JobApplication getById(Long id) {
+    public JobApplicationResponse getById(Long id) {
 
         User currentUser = getCurrentUser();
 
         JobApplication job = repository.findById(id)
-                .orElseThrow(() ->
-                        new JobApplicationNotFoundException(id));
+                .orElseThrow(() -> new JobApplicationNotFoundException(id));
 
-        if (!job.getUser().getUsername()
-                .equals(currentUser.getUsername())) {
+        checkOwnership(job, currentUser);
 
-            throw new UnauthorizedAccessException();
-        }
-
-        return job;
+        return mapToResponse(job);
     }
 
-    public List<JobApplication> getByStatus(Status status) {
-
-        User currentUser = getCurrentUser();
-
-        return repository.findByUser(currentUser)
-                .stream()
-                .filter(app -> app.getStatus() == status)
-                .toList();
-    }
-
-    public JobApplication update(Long id, JobApplication updatedJob) {
+    public JobApplicationResponse update(Long id,
+                                         UpdateJobApplicationRequest req) {
 
         User currentUser = getCurrentUser();
 
         JobApplication job = repository.findById(id)
-                .orElseThrow(() ->
-                        new JobApplicationNotFoundException(id));
+                .orElseThrow(() -> new JobApplicationNotFoundException(id));
 
-        if (!job.getUser().getUsername()
-                .equals(currentUser.getUsername())) {
+        checkOwnership(job, currentUser);
 
-            throw new UnauthorizedAccessException();
-        }
+        job.setCompanyName(req.companyName());
+        job.setRole(req.role());
+        job.setStatus(req.status());
+        job.setAppliedDate(req.appliedDate());
+        job.setDeadline(req.deadline());
+        job.setNotes(req.notes());
 
-        job.setCompanyName(updatedJob.getCompanyName());
-        job.setRole(updatedJob.getRole());
-        job.setStatus(updatedJob.getStatus());
-        job.setAppliedDate(updatedJob.getAppliedDate());
-        job.setDeadline(updatedJob.getDeadline());
-        job.setNotes(updatedJob.getNotes());
+        JobApplication updated = repository.save(job);
 
-        logger.info("Updated job application with id: {}", id);
+        logger.info("Updated job application id {}", id);
 
-        return repository.save(job);
+        return mapToResponse(updated);
     }
 
     public void delete(Long id) {
@@ -121,41 +108,51 @@ public class JobApplicationService {
         User currentUser = getCurrentUser();
 
         JobApplication job = repository.findById(id)
-                .orElseThrow(() ->
-                        new JobApplicationNotFoundException(id));
+                .orElseThrow(() -> new JobApplicationNotFoundException(id));
 
-        if (!job.getUser().getUsername()
-                .equals(currentUser.getUsername())) {
-
-            throw new UnauthorizedAccessException();
-        }
-
-        logger.info("Deleted job application with id: {}", id);
+        checkOwnership(job, currentUser);
 
         repository.delete(job);
+
+        logger.info("Deleted job application id {}", id);
     }
 
-    public List<JobApplication> getOverdueApplications() {
+
+    public List<JobApplicationResponse> getByStatus(Status status) {
+
+        User currentUser = getCurrentUser();
+
+        return repository.findByUser(currentUser)
+                .stream()
+                .filter(app -> app.getStatus() == status)
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+
+    public List<JobApplicationResponse> getOverdueApplications() {
 
         User currentUser = getCurrentUser();
 
         return repository.findByUser(currentUser)
                 .stream()
                 .filter(app -> app.getDeadline() != null)
-                .filter(app -> app.getDeadline()
-                        .isBefore(LocalDate.now()))
+                .filter(app -> app.getDeadline().isBefore(LocalDate.now()))
+                .map(this::mapToResponse)
                 .toList();
     }
 
-    public List<JobApplication> getActiveApplications() {
+    public List<JobApplicationResponse> getActiveApplications() {
 
         User currentUser = getCurrentUser();
 
         return repository.findByUser(currentUser)
                 .stream()
                 .filter(app -> app.getStatus() == Status.APPLIED)
+                .map(this::mapToResponse)
                 .toList();
     }
+
 
     public DashboardResponse getDashboard() {
 
@@ -184,8 +181,7 @@ public class JobApplicationService {
 
         long overdue = applications.stream()
                 .filter(app -> app.getDeadline() != null)
-                .filter(app -> app.getDeadline()
-                        .isBefore(LocalDate.now()))
+                .filter(app -> app.getDeadline().isBefore(LocalDate.now()))
                 .count();
 
         return new DashboardResponse(
@@ -198,6 +194,27 @@ public class JobApplicationService {
         );
     }
 
+    private JobApplicationResponse mapToResponse(JobApplication job) {
+
+        return new JobApplicationResponse(
+                job.getId(),
+                job.getCompanyName(),
+                job.getRole(),
+                job.getStatus(),
+                job.getAppliedDate(),
+                job.getDeadline(),
+                job.getNotes()
+        );
+    }
+
+    private void checkOwnership(JobApplication job, User user) {
+
+        if (!job.getUser().getUsername()
+                .equals(user.getUsername())) {
+            throw new UnauthorizedAccessException();
+        }
+    }
+
     private User getCurrentUser() {
 
         String username = SecurityContextHolder.getContext()
@@ -205,7 +222,13 @@ public class JobApplicationService {
                 .getName();
 
         return userRepository.findByUsername(username)
-                .orElseThrow(() ->
-                        new UserNotFoundException(username));
+                .orElseThrow(() -> new UserNotFoundException(username));
+    }
+    public List<JobApplicationResponse> getAllForAdmin() {
+
+        return repository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 }
