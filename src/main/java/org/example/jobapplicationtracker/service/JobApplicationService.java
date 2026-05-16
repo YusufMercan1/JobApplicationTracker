@@ -16,6 +16,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -224,6 +227,22 @@ public class JobApplicationService {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UserNotFoundException(username));
     }
+
+    public Page<JobApplicationResponse> getAllPaginated(
+            int page,
+            int size
+    ) {
+
+        User currentUser = getCurrentUser();
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<JobApplication> applications =
+                repository.findByUser(currentUser, pageable);
+
+        return applications.map(this::mapToResponse);
+    }
+
     public List<JobApplicationResponse> getAllForAdmin() {
 
         return repository.findAll()

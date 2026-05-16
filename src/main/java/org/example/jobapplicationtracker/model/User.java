@@ -3,6 +3,8 @@ package org.example.jobapplicationtracker.model;
 import jakarta.persistence.*;
 import lombok.*;
 import org.example.jobapplicationtracker.model.Role;
+import java.util.List; // Denna fixar "Cannot resolve symbol 'List'"
+import org.example.jobapplicationtracker.model.JobApplication; // Denna fixar 'JobApplication'
 
 @Entity
 @Getter
@@ -21,4 +23,8 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<JobApplication> jobApplications;
 }
