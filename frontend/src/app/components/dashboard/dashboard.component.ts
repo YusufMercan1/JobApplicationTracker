@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { Chart, ArcElement, Tooltip, Legend, DoughnutController } from 'chart.js';
 import { JobService } from '../../services/job.service';
 import { InterviewService } from '../../services/interview.service';
 import {
@@ -13,6 +14,8 @@ import {
 import { BookInterviewRequest, Interview, Participant } from '../../models/interview.model';
 import { isDeadlineApproaching, isDeadlineOverdue } from '../../utils/reminder.utils';
 
+Chart.register(ArcElement, Tooltip, Legend, DoughnutController);
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -20,7 +23,11 @@ import { isDeadlineApproaching, isDeadlineOverdue } from '../../utils/reminder.u
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, AfterViewInit {
+
+  @ViewChild('donutChart') donutChartRef!: ElementRef<HTMLCanvasElement>;
+  private chart: Chart<'doughnut'> | null = null;
+
   applications: JobApplication[] = [];
   stats: DashboardStats | null = null;
   errorMessage = '';
@@ -49,6 +56,53 @@ export class DashboardComponent implements OnInit {
     this.loadDashboard();
   }
 
+  ngAfterViewInit() {
+    setTimeout(() => {
+      if (!this.donutChartRef) return;
+      this.chart = new Chart(this.donutChartRef.nativeElement, {
+        type: 'doughnut',
+        data: {
+          labels: ['Sökt', 'Intervju', 'Avslagen'],
+          datasets: [{
+            data: [0, 0, 0],
+            backgroundColor: ['#3b82f6', '#f59e0b', '#6b7280'],
+            borderColor: 'transparent',
+            hoverOffset: 6
+          }]
+        },
+        options: {
+          responsive: false,
+          maintainAspectRatio: true,
+          cutout: '70%',
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: '#94a3b8',
+                padding: 16,
+                font: { size: 13 }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => ` ${ctx.label}: ${ctx.parsed}`
+              }
+            }
+          }
+        }
+      });
+    }, 0);
+  }
+
+  private updateChart(stats: DashboardStats) {
+    if (!this.chart) {
+      setTimeout(() => this.updateChart(stats), 100);
+      return;
+    }
+    this.chart.data.datasets[0].data = [stats.applied, stats.interview, stats.rejected];
+    this.chart.update();
+  }
+
   loadDashboard() {
     this.jobService.getApplications().subscribe({
       next: (data) => {
@@ -63,6 +117,7 @@ export class DashboardComponent implements OnInit {
     this.jobService.getDashboardStats().subscribe({
       next: (data) => {
         this.stats = data;
+        this.updateChart(data);
       },
       error: () => {
         this.errorMessage = 'Kunde inte hämta statistik.';

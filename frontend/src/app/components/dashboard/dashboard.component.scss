@@ -561,4 +561,29 @@
     max-width: none;
     white-space: normal;
   }
+  .chart-section {
+    margin-bottom: 1.5rem;
+    padding: 1.25rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    max-width: 320px;  // begränsa bredden
+  }
+
+  .chart-title {
+    margin: 0 0 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .chart-wrapper {
+    height: 120px;
+  }
+
+  .chart-section {
+    max-width: 220px;
+  }
 }

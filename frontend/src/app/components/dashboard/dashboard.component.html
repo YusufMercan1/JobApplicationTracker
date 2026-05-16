@@ -30,7 +30,12 @@
       <span class="stat-label">Nekanden</span>
     </article>
   </section>
-
+  <section class="chart-section" [hidden]="!stats || stats.total === 0">
+    <h2 class="chart-title">Statusöversikt</h2>
+    <div class="chart-wrapper">
+      <canvas #donutChart></canvas>
+    </div>
+  </section>
   <section class="reminder-banner" *ngIf="stats && (stats.upcomingDeadlines > 0 || stats.upcomingMeetings > 0)">
     <span class="reminder-icon">!</span>
     <div>
