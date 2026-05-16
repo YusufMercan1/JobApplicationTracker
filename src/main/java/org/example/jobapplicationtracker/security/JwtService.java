@@ -48,7 +48,15 @@ public class JwtService {
     }
 
     public String extractRole(String token) {
-        return extractAllClaims(token).get("role", String.class);
+
+        try {
+            return extractAllClaims(token)
+                    .get("role", String.class);
+
+        } catch (JwtException e) {
+
+            return "USER";
+        }
     }
 
     public boolean isTokenValid(String token) {
