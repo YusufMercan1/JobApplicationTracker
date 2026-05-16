@@ -5,12 +5,15 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
 
+@Component
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
@@ -37,22 +40,34 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
-        String jwt = authHeader.substring(7);
+        String token = authHeader.substring(7);
 
         try {
-            String username = jwtService.extractUsername(jwt);
+            String username = jwtService.extractUsername(token);
+            String role = jwtService.extractRole(token);
 
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            // 🚨 extra safety (viktigt för att undvika 500)
+            if (username == null || role == null) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
 
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        username, null, Collections.emptyList()
-                );
+            if (SecurityContextHolder.getContext().getAuthentication() == null) {
+
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(
+                                username,
+                                null,
+                                List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                        );
 
                 SecurityContextHolder.getContext().setAuthentication(authToken);
-                System.out.println("JWT Filter: Användare '" + username + "' inloggad framgångsrikt!");
             }
+
         } catch (Exception e) {
-            System.err.println("JWT Filter Error: " + e.getMessage());
+            SecurityContextHolder.clearContext();
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
         }
 
         filterChain.doFilter(request, response);
