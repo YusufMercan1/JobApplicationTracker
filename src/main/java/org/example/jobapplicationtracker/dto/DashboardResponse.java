@@ -10,7 +10,8 @@ public class DashboardResponse {
     private long total;
     private long applied;
     private long interview;
-    private long offer;
     private long rejected;
     private long overdue;
+    private long upcomingDeadlines;
+    private long upcomingMeetings;
 }

@@ -1,8 +1,10 @@
 package org.example.jobapplicationtracker.service;
 
+import org.example.jobapplicationtracker.model.Interview;
 import org.example.jobapplicationtracker.model.JobApplication;
-import org.example.jobapplicationtracker.model.User;
+import org.example.jobapplicationtracker.repository.InterviewRepository;
 import org.example.jobapplicationtracker.repository.JobApplicationRepository;
+import org.example.jobapplicationtracker.util.ReminderUtils;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -12,50 +14,73 @@ import java.util.List;
 @Service
 public class SchedulerService {
 
-    private final JobApplicationRepository repository;
+    private final JobApplicationRepository jobRepository;
+    private final InterviewRepository interviewRepository;
     private final EmailService emailService;
 
-
-
-    public SchedulerService(JobApplicationRepository repository,
-                            EmailService emailService) {
-        this.repository = repository;
+    public SchedulerService(
+            JobApplicationRepository jobRepository,
+            InterviewRepository interviewRepository,
+            EmailService emailService) {
+        this.jobRepository = jobRepository;
+        this.interviewRepository = interviewRepository;
         this.emailService = emailService;
     }
 
-    @Scheduled(fixedRate = 30000) // test: var 30:e sekund
-    public void checkDeadlines() {
+    @Scheduled(cron = "0 0 8 * * *")
+    public void checkDeadlinesAndMeetings() {
+        checkApplicationDeadlines();
+        checkUpcomingMeetings();
+    }
 
-        LocalDate today = LocalDate.now();
-        LocalDate in3Days = today.plusDays(3);
-
-        List<JobApplication> upcoming = repository.findAll().stream()
+    private void checkApplicationDeadlines() {
+        List<JobApplication> applications = jobRepository.findAll().stream()
                 .filter(app -> app.getDeadline() != null)
-                .filter(app -> !app.getDeadline().isAfter(in3Days))
-                .filter(app -> app.getUser() != null)
+                .filter(app -> ReminderUtils.isDeadlineApproaching(app.getDeadline())
+                        || ReminderUtils.isDeadlineOverdue(app.getDeadline()))
+                .filter(app -> app.getUser() != null && app.getUser().getEmail() != null)
                 .toList();
 
-        for (JobApplication app : upcoming) {
-
-            if (app.getUser() == null || app.getUser().getEmail() == null) {
-                System.out.println("SKIP (no user/email) id=" + app.getId());
-                continue;
-            }
-
+        for (JobApplication app : applications) {
             if (app.isReminderSent()) {
                 continue;
             }
 
-            emailService.sendReminder(
+            emailService.sendDeadlineReminder(
                     app.getUser().getEmail(),
                     app.getCompanyName(),
                     app.getDeadline().toString()
             );
 
             app.setReminderSent(true);
-            repository.save(app);
+            jobRepository.save(app);
+        }
+    }
 
-            System.out.println("📧 SENT ONCE to: " + app.getUser().getEmail());
+    private void checkUpcomingMeetings() {
+        List<Interview> interviews = interviewRepository.findAll().stream()
+                .filter(i -> i.getDateTime() != null)
+                .filter(i -> ReminderUtils.isMeetingApproaching(i.getDateTime()))
+                .filter(i -> i.getJobApplication() != null)
+                .filter(i -> i.getJobApplication().getUser() != null)
+                .filter(i -> i.getJobApplication().getUser().getEmail() != null)
+                .toList();
+
+        for (Interview interview : interviews) {
+            if (interview.isReminderSent()) {
+                continue;
+            }
+
+            JobApplication job = interview.getJobApplication();
+            emailService.sendMeetingReminder(
+                    job.getUser().getEmail(),
+                    job.getCompanyName(),
+                    interview.getDateTime().toString(),
+                    interview.getLocation() != null ? interview.getLocation() : "Ej angiven"
+            );
+
+            interview.setReminderSent(true);
+            interviewRepository.save(interview);
         }
     }
 }

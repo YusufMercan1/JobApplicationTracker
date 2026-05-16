@@ -1,14 +1,16 @@
 import { Component } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [FormsModule, CommonModule],
-  templateUrl: './register.component.html'
+  imports: [FormsModule, CommonModule, RouterLink],
+  templateUrl: './register.component.html',
+  styleUrl: './register.component.scss'
 })
 export class RegisterComponent {
   user = {
@@ -20,7 +22,7 @@ export class RegisterComponent {
   constructor(private http: HttpClient, private router: Router) {}
 
   onRegister() {
-    this.http.post('http://localhost:8080/auth/register', this.user)
+    this.http.post(`${environment.apiUrl}/auth/register`, this.user)
       .subscribe({
         next: () => {
           alert('Registrering lyckades! Du kan nu logga in.');

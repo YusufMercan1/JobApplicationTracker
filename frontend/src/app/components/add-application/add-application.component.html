@@ -1,35 +1,77 @@
-<div class="container">
-  <h2>Lägg till ny jobbansökan</h2>
-  <button routerLink="/add-application" class="btn-add">+ Lägg till ansökan</button>
+<div class="form-container">
+  <header class="form-header">
+    <h2>Lägg till ny jobbansökan</h2>
+    <a routerLink="/dashboard" class="back-link">← Tillbaka till dashboard</a>
+  </header>
 
-  <form (ngSubmit)="onSubmit()">
+  <div *ngIf="errorMessage" class="error-banner">{{ errorMessage }}</div>
+
+  <form (ngSubmit)="onSubmit()" class="application-form">
     <div class="form-group">
-      <label>Företag</label>
-      <input type="text" [(ngModel)]="newApp.company" name="company" required>
+      <label for="companyName">Företag</label>
+      <input
+        id="companyName"
+        type="text"
+        [(ngModel)]="newApp.companyName"
+        name="companyName"
+        required
+        placeholder="Ex. Spotify">
     </div>
 
     <div class="form-group">
-      <label>Roll</label>
-      <input type="text" [(ngModel)]="newApp.role" name="role" required>
+      <label for="role">Roll</label>
+      <input
+        id="role"
+        type="text"
+        [(ngModel)]="newApp.role"
+        name="role"
+        required
+        placeholder="Ex. Backend Developer">
     </div>
 
     <div class="form-group">
-      <label>Status</label>
-      <select [(ngModel)]="newApp.status" name="status">
-        <option value="APPLIED">Sökt</option>
-        <option value="INTERVIEW">Intervju</option>
-        <option value="OFFER">Erbjudande</option>
-        <option value="REJECTED">Nej tack</option>
+      <label for="status">Status</label>
+      <select id="status" [(ngModel)]="newApp.status" name="status">
+        @for (status of statuses; track status) {
+          <option [value]="status">{{ statusLabels[status] }}</option>
+        }
       </select>
     </div>
 
+    <div class="form-row">
+      <div class="form-group">
+        <label for="appliedDate">Ansökningsdatum</label>
+        <input
+          id="appliedDate"
+          type="date"
+          [(ngModel)]="newApp.appliedDate"
+          name="appliedDate">
+      </div>
+
+      <div class="form-group">
+        <label for="deadline">Deadline</label>
+        <input
+          id="deadline"
+          type="date"
+          [(ngModel)]="newApp.deadline"
+          name="deadline">
+      </div>
+    </div>
+
     <div class="form-group">
-      <label>Datum</label>
-      <input type="date" [(ngModel)]="newApp.applicationDate" name="date">
+      <label for="notes">Anteckningar</label>
+      <textarea
+        id="notes"
+        [(ngModel)]="newApp.notes"
+        name="notes"
+        rows="4"
+        placeholder="Kontaktperson, länk till annons, intervjutips..."></textarea>
     </div>
 
     <div class="button-group">
-      <button type="submit" class="btn-save">Spara ansökan</button>
+      <button type="submit" class="btn-save" [disabled]="isSubmitting">
+        {{ isSubmitting ? 'Sparar...' : 'Spara ansökan' }}
+      </button>
       <button type="button" (click)="cancel()" class="btn-cancel">Avbryt</button>
     </div>
   </form>

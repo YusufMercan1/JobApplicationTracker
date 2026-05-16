@@ -1,7 +1,15 @@
-<div class="login-container">
-  <div class="login-card">
-    <h2>Logga in</h2>
-    <p>Välkommen till Job Application Tracker</p>
+<div class="auth-page">
+  <div class="auth-brand">
+    <span class="brand-icon">JT</span>
+    <h1>Job Tracker</h1>
+    <p>Håll koll på dina jobbansökningar</p>
+  </div>
+
+  <div class="auth-card">
+    <header class="auth-header">
+      <h2>Logga in</h2>
+      <p>Välkommen tillbaka</p>
+    </header>
 
     <div class="form-group">
       <label for="username">Användarnamn</label>
@@ -10,7 +18,8 @@
         id="username"
         [(ngModel)]="credentials.username"
         name="username"
-        placeholder="Skriv in ditt användarnamn">
+        placeholder="Ditt användarnamn"
+        autocomplete="username">
     </div>
 
     <div class="form-group">
@@ -20,13 +29,16 @@
         id="password"
         [(ngModel)]="credentials.password"
         name="password"
-        placeholder="Skriv in ditt lösenord">
+        placeholder="Ditt lösenord"
+        autocomplete="current-password"
+        (keyup.enter)="onLogin()">
     </div>
 
-    <button class="login-btn" (click)="onLogin()">Logga in</button>
+    <button type="button" class="btn-primary" (click)="onLogin()">Logga in</button>
 
-    <div class="footer-links">
-      <p>Saknar du konto? <a routerLink="/register">Registrera dig här</a></p>
-    </div>
+    <p class="auth-footer">
+      Saknar du konto?
+      <a routerLink="/register">Registrera dig</a>
+    </p>
   </div>
 </div>

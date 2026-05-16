@@ -1,5 +1,6 @@
 package org.example.jobapplicationtracker.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,8 +21,10 @@ public class Interview {
     private Long id;
     private LocalDateTime dateTime;
     private String location;
+    private boolean reminderSent = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     private JobApplication jobApplication;
 
     @OneToMany(mappedBy = "interview", cascade = CascadeType.ALL, orphanRemoval = true)

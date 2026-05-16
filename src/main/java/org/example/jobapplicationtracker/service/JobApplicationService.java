@@ -5,12 +5,14 @@ import org.example.jobapplicationtracker.dto.JobApplicationResponse;
 import org.example.jobapplicationtracker.model.Status;
 import org.example.jobapplicationtracker.model.JobApplication;
 import org.example.jobapplicationtracker.model.User;
+import org.example.jobapplicationtracker.repository.InterviewRepository;
 import org.example.jobapplicationtracker.repository.JobApplicationRepository;
 import org.example.jobapplicationtracker.repository.UserRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -18,10 +20,15 @@ public class JobApplicationService {
 
     private final JobApplicationRepository repository;
     private final UserRepository userRepository;
+    private final InterviewRepository interviewRepository;
 
-    public JobApplicationService(JobApplicationRepository repository, UserRepository userRepository) {
+    public JobApplicationService(
+            JobApplicationRepository repository,
+            UserRepository userRepository,
+            InterviewRepository interviewRepository) {
         this.repository = repository;
         this.userRepository = userRepository;
+        this.interviewRepository = interviewRepository;
     }
 
     private User getCurrentUser() {
@@ -122,21 +129,35 @@ public class JobApplicationService {
         long total = applications.size();
         long applied = applications.stream().filter(app -> app.getStatus() == Status.APPLIED).count();
         long interview = applications.stream().filter(app -> app.getStatus() == Status.INTERVIEW).count();
-        long offer = applications.stream().filter(app -> app.getStatus() == Status.OFFER).count();
         long rejected = applications.stream().filter(app -> app.getStatus() == Status.REJECTED).count();
+
+        LocalDate today = LocalDate.now();
+        LocalDate in3Days = today.plusDays(3);
 
         long overdue = applications.stream()
                 .filter(app -> app.getDeadline() != null)
-                .filter(app -> app.getDeadline().isBefore(LocalDate.now()))
+                .filter(app -> app.getDeadline().isBefore(today))
                 .count();
+
+        long upcomingDeadlines = applications.stream()
+                .filter(app -> app.getDeadline() != null)
+                .filter(app -> !app.getDeadline().isBefore(today))
+                .filter(app -> !app.getDeadline().isAfter(in3Days))
+                .count();
+
+        User user = getCurrentUser();
+        LocalDateTime now = LocalDateTime.now();
+        long upcomingMeetings = interviewRepository.countByJobApplicationUserIdAndDateTimeBetween(
+                user.getId(), now, now.plusDays(3));
 
         return new DashboardResponse(
                 total,
                 applied,
                 interview,
-                offer,
                 rejected,
-                overdue
+                overdue,
+                upcomingDeadlines,
+                upcomingMeetings
         );
     }
 }

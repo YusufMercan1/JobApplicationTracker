@@ -3,6 +3,7 @@ package org.example.jobapplicationtracker.controller;
 import org.example.jobapplicationtracker.dto.DashboardResponse;
 import org.example.jobapplicationtracker.model.Status;
 import org.example.jobapplicationtracker.model.JobApplication;
+import org.example.jobapplicationtracker.service.EmailService;
 import org.example.jobapplicationtracker.service.JobApplicationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,9 +16,11 @@ import java.util.List;
 public class JobApplicationController {
 
     private final JobApplicationService service;
+    private final EmailService emailService;
 
-    public JobApplicationController(JobApplicationService service) {
+    public JobApplicationController(JobApplicationService service, EmailService emailService) {
         this.service = service;
+        this.emailService = emailService;
     }
 
     @PostMapping
@@ -64,5 +67,16 @@ public class JobApplicationController {
     @GetMapping("/dashboard")
     public ResponseEntity<DashboardResponse> getDashboard() {
         return ResponseEntity.ok(service.getDashboard());
+    }
+    @PostMapping("/{id}/send-test-email")
+    public ResponseEntity<Void> sendTestEmail(@PathVariable Long id) {
+        JobApplication job = service.getById(id);
+
+        String userEmail = job.getUser().getEmail();
+        String deadlineStr = job.getDeadline() != null ? job.getDeadline().toString() : "Inget datum satt";
+
+        emailService.sendDeadlineReminder(userEmail, job.getCompanyName(), deadlineStr);
+
+        return ResponseEntity.ok().build();
     }
 }

@@ -1,24 +1,36 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import {HttpClient, HttpHeaders} from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { JobApplication } from '../models/job-application.model';
+import { environment } from '../../environments/environment';
+import { DashboardStats, JobApplication } from '../models/job-application.model';
 
 @Injectable({ providedIn: 'root' })
 export class JobService {
-  private apiUrl = 'http://localhost:8080/applications';
+  private readonly apiUrl = `${environment.apiUrl}/applications`;
 
   constructor(private http: HttpClient) {}
 
   getApplications(): Observable<JobApplication[]> {
     return this.http.get<JobApplication[]>(this.apiUrl);
-    // i job.service.ts
   }
 
-    deleteApplication(id: number) {
-      return this.http.delete(`http://localhost:8080/applications/${id}`);
-    }
+  getDashboardStats(): Observable<DashboardStats> {
+    return this.http.get<DashboardStats>(`${this.apiUrl}/dashboard`);
+  }
 
-    updateStatus(id: number, status: string) {
-      return this.http.patch(`http://localhost:8080/applications/${id}/status`, status);
-    }
+  createApplication(application: JobApplication): Observable<JobApplication> {
+    return this.http.post<JobApplication>(this.apiUrl, application);
+  }
+
+  updateApplication(id: number, application: JobApplication): Observable<JobApplication> {
+    return this.http.put<JobApplication>(`${this.apiUrl}/${id}`, application);
+  }
+
+  deleteApplication(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+  sendTestEmail(id: number): Observable<void> {
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${localStorage.getItem('accessToken')}`);
+    return this.http.post<void>(`${this.apiUrl}/${id}/send-test-email`, {}, { headers });
+  }
 }

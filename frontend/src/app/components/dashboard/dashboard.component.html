@@ -6,21 +6,43 @@
     </div>
 
     <div class="header-actions">
-      <button routerLink="/add-application" class="btn-add">+ Lägg till ansökan</button>
-      <button class="btn-logout" (click)="logout()">Logga ut</button>
+      <a routerLink="/add-application" class="btn-add">+ Lägg till ansökan</a>
+      <button type="button" class="btn-logout" (click)="logout()">Logga ut</button>
     </div>
   </header>
 
-  <div *ngIf="errorMessage" class="error-banner">
-    {{ errorMessage }}
-  </div>
+  <div *ngIf="errorMessage" class="error-banner">{{ errorMessage }}</div>
 
-  <div class="stats-cards">
-    <div class="card">
-      <h3>Totalt sökta</h3>
-      <p class="stat-number">{{ applications.length }}</p>
+  <section class="stats-grid" *ngIf="stats">
+    <article class="stat-card">
+      <h3>Ansökningar</h3>
+      <p class="stat-number">{{ stats.total }}</p>
+      <span class="stat-label">totalt antal</span>
+    </article>
+    <article class="stat-card stat-interview">
+      <h3>Intervjuer</h3>
+      <p class="stat-number">{{ stats.interview }}</p>
+      <span class="stat-label">Intervjuer</span>
+    </article>
+    <article class="stat-card stat-rejected">
+      <h3>Nekanden</h3>
+      <p class="stat-number">{{ stats.rejected }}</p>
+      <span class="stat-label">Nekanden</span>
+    </article>
+  </section>
+
+  <section class="reminder-banner" *ngIf="stats && (stats.upcomingDeadlines > 0 || stats.upcomingMeetings > 0)">
+    <span class="reminder-icon">!</span>
+    <div>
+      <strong>Påminnelser</strong>
+      <p *ngIf="stats.upcomingDeadlines > 0">
+        {{ stats.upcomingDeadlines }} deadline{{ stats.upcomingDeadlines > 1 ? 's' : '' }} inom 3 dagar
+      </p>
+      <p *ngIf="stats.upcomingMeetings > 0">
+        {{ stats.upcomingMeetings }} intervjumöte{{ stats.upcomingMeetings > 1 ? 'n' : '' }} inom 3 dagar
+      </p>
     </div>
-  </div>
+  </section>
 
   <div class="table-responsive">
     <table class="job-table">
@@ -29,37 +51,149 @@
         <th>Företag</th>
         <th>Roll</th>
         <th>Status</th>
-        <th>Datum</th>
-        <th>Åtgärder</th> </tr>
+        <th>Ansökt</th>
+        <th>Deadline</th>
+        <th>Anteckningar</th>
+        <th>Åtgärder</th>
+      </tr>
       </thead>
       <tbody>
-      <tr *ngFor="let app of applications">
-        <td>{{ app.companyName }}</td>
-        <td>{{ app.jobTitle }}</td>
-        <td>
+      <tr *ngFor="let app of applications" [class.row-overdue]="isOverdue(app)">
+        <td data-label="Företag">
+          {{ app.companyName }}
+          <span *ngIf="showDeadlineReminder(app)" class="badge badge-warning" title="Deadline närmar sig">
+              Påminnelse
+            </span>
+        </td>
+        <td data-label="Roll">{{ app.role }}</td>
+        <td data-label="Status">
           <select
             [(ngModel)]="app.status"
-            (change)="onStatusChange(app.id, app.status)"
+            (change)="onStatusChange(app)"
             [ngClass]="app.status.toLowerCase()"
             class="status-select">
-            <option value="SÖKT">Sökt</option>
-            <option value="INTERVJU">Intervju</option>
-            <option value="ERBJUDANDE">Erbjudande</option>
-            <option value="NEJ">Nej tack</option>
+            @for (status of statuses; track status) {
+              <option [value]="status">{{ statusLabels[status] }}</option>
+            }
           </select>
         </td>
-        <td>{{ app.applicationDate | date:'yyyy-MM-dd' }}</td>
-        <td>
-          <button (click)="onDelete(app.id)" class="btn-delete">
-            Radera
-          </button>
+        <td data-label="Ansökt">{{ app.appliedDate | date:'yyyy-MM-dd' }}</td>
+        <td data-label="Deadline">
+            <span [class.overdue-text]="isOverdue(app)" [class.approaching-text]="isApproaching(app)">
+              {{ app.deadline ? (app.deadline | date:'yyyy-MM-dd') : '—' }}
+            </span>
+        </td>
+        <td data-label="Anteckningar" class="notes-cell">{{ app.notes || '—' }}</td>
+        <td data-label="Åtgärder" class="actions-cell">
+          <button type="button" class="btn-email" (click)="triggerEmail(app.id!)">📧 Mail</button>
+          <button type="button" class="btn-secondary" (click)="openEdit(app)">Redigera</button>
+          <button type="button" class="btn-secondary" (click)="openInterviews(app)">Möten</button>
+          <button type="button" class="btn-danger" (click)="onDelete(app.id)">Radera</button>
         </td>
       </tr>
 
       <tr *ngIf="applications.length === 0 && !errorMessage">
-        <td colspan="5" class="empty-msg">Inga ansökningar hittades. Dags att söka jobb!</td>
+        <td colspan="7" class="empty-msg">Inga ansökningar hittades. Dags att söka jobb!</td>
       </tr>
       </tbody>
     </table>
+  </div>
+</div>
+
+<div class="modal-backdrop" *ngIf="editingApp" (click)="closeEdit()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h2>Redigera ansökan</h2>
+    <form (ngSubmit)="saveEdit()" class="modal-form">
+      <div class="form-group">
+        <label>Företag</label>
+        <input type="text" [(ngModel)]="editingApp.companyName" name="editCompany" required>
+      </div>
+      <div class="form-group">
+        <label>Roll</label>
+        <input type="text" [(ngModel)]="editingApp.role" name="editRole" required>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select [(ngModel)]="editingApp.status" name="editStatus">
+          @for (status of statuses; track status) {
+            <option [value]="status">{{ statusLabels[status] }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Ansökningsdatum</label>
+          <input type="date" [(ngModel)]="editingApp.appliedDate" name="editApplied">
+        </div>
+        <div class="form-group">
+          <label>Deadline</label>
+          <input type="date" [(ngModel)]="editingApp.deadline" name="editDeadline">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Anteckningar</label>
+        <textarea [(ngModel)]="editingApp.notes" name="editNotes" rows="3"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="submit" class="btn-save">Spara</button>
+        <button type="button" class="btn-cancel" (click)="closeEdit()">Avbryt</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" *ngIf="interviewApp" (click)="closeInterviews()">
+  <div class="modal modal-wide" (click)="$event.stopPropagation()">
+    <h2>Intervjumöten — {{ interviewApp.companyName }}</h2>
+
+    <div *ngIf="interviewError" class="error-banner">{{ interviewError }}</div>
+    <p *ngIf="interviewLoading">Laddar möten...</p>
+
+    <section class="meetings-list" *ngIf="!interviewLoading">
+      <h3>Bokade möten</h3>
+      <div *ngIf="interviews.length === 0" class="empty-meetings">Inga möten bokade ännu.</div>
+
+      <article *ngFor="let meeting of interviews" class="meeting-card">
+        <div class="meeting-info">
+          <strong>{{ meeting.dateTime | date:'yyyy-MM-dd HH:mm' }}</strong>
+          <span>{{ meeting.location || 'Plats ej angiven' }}</span>
+          <span *ngIf="meeting.meetingApproaching" class="badge badge-warning">Möte snart</span>
+          <ul *ngIf="meeting.participants?.length">
+            <li *ngFor="let p of meeting.participants">{{ p.name }} ({{ p.email || 'ingen e-post' }})</li>
+          </ul>
+        </div>
+        <button type="button" class="btn-danger" (click)="cancelMeeting(meeting.id)">Avboka</button>
+      </article>
+    </section>
+
+    <section class="book-meeting">
+      <h3>Boka nytt möte</h3>
+      <div class="form-group">
+        <label>Datum & tid</label>
+        <input type="datetime-local" [(ngModel)]="newMeeting.dateTime" name="meetingDate">
+      </div>
+      <div class="form-group">
+        <label>Plats / länk</label>
+        <input type="text" [(ngModel)]="newMeeting.location" name="meetingLocation" placeholder="Kontor eller Teams-länk">
+      </div>
+
+      <h4>Deltagare</h4>
+      <div class="participant-form">
+        <input type="text" [(ngModel)]="newParticipant.name" name="pName" placeholder="Namn">
+        <input type="email" [(ngModel)]="newParticipant.email" name="pEmail" placeholder="E-post">
+        <button type="button" class="btn-secondary" (click)="addParticipant()">+ Lägg till</button>
+      </div>
+      <ul class="participant-list" *ngIf="newMeeting.participants.length">
+        <li *ngFor="let p of newMeeting.participants; let i = index">
+          {{ p.name }} — {{ p.email }}
+          <button type="button" class="link-btn" (click)="removeParticipant(i)">Ta bort</button>
+        </li>
+      </ul>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-save" (click)="bookMeeting()">Boka möte</button>
+        <button type="button" class="btn-cancel" (click)="closeInterviews()">Stäng</button>
+      </div>
+    </section>
   </div>
 </div>
